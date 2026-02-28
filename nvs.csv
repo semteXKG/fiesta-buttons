@@ -1,0 +1,6 @@
+key,type,encoding,value
+baseimage,namespace,,
+username,data,string,"semmalNet"
+password,data,string,"wirefun3"
+udp_server,data,string,""
+udp_port,data,i16,0
