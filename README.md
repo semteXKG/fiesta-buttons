@@ -17,10 +17,18 @@ Acts as the WiFi access point and MQTT broker inside the car. ESP32 button box u
 
 ### MQTT Broker
 
+Mosquitto 2.0.21 is installed and enabled on carpi. It starts automatically on boot.
+
 ```sh
+# Install (already done)
 sudo apt install mosquitto mosquitto-clients
 sudo systemctl enable --now mosquitto
+
+# Check status
+systemctl status mosquitto
 ```
+
+Config file: `/etc/mosquitto/mosquitto.conf`
 
 ### Verify
 
