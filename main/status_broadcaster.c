@@ -3,7 +3,7 @@
 #include <esp_log.h>
 #include <stdio.h>
 
-#define MQTT_TOPIC "funkbox/buttons"
+#define MQTT_TOPIC "fiesta/buttons"
 
 static const char* BC_TAG = "broadcaster";
 

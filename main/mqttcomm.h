@@ -1,6 +1,4 @@
 #pragma once
 
-#include <esp_netif_types.h>
-
-void mqttcomm_start(esp_netif_t* netif);
+void mqttcomm_start(void);
 int mqttcomm_publish(const char* topic, const char* data, int len);

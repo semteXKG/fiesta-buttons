@@ -32,11 +32,11 @@ The `PRIMARY` CMake flag is still present but currently unused — WiFi credenti
 
 **Communication flow**: Physical GPIO buttons → `button_handler` (espressif/button component, `BUTTON_PRESS_DOWN` event) → `broadcaster_send_button` → `mqttcomm_publish` → MQTT topic `funkbox/buttons` on the gateway broker.
 
-**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `YES`, `FCK`, `STINT`, `NO`; states: `PRESSED`, `DEPRESSED`.
+**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `YES`, `FCK`, `STINT`, `NO`; states: `PRESSED`, `DEPRESSED`. Published to `fiesta/buttons` at QoS 1, no retain.
 
 **Key modules**:
 - `wlan.c` — WiFi STA connection; credentials (`fiesta-network` / `fiesta-network-123`) defined as `#define` at top of file; blocks in `app_main` until IP obtained, reboots on failure
-- `mqttcomm.c` — MQTT client; broker URI auto-derived from WiFi gateway IP (`mqtt://<gw_ip>`); reconnects every 5s on failure
+- `mqttcomm.c` — MQTT client; connects to `mqtt://broker:1883` (resolved via carpi dnsmasq); client ID `buttons-box`; LWT `fiesta/device/buttons-box/status` → `{"status":"offline"}`; publishes `online` on connect; reconnects every 5s on failure
 - `led_status.c` — Status LED on GPIO 8; solid ON = MQTT connected, flashing ~2Hz = disconnected
 - `button_handler.c` — Registers 5 GPIO buttons using `espressif/button` component; only `BUTTON_PRESS_DOWN` is handled (no release events currently)
 - `funkbox_types.h` — Shared `ButtonName` / `ButtonState` enums
