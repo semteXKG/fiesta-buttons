@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "esp_err.h"
 #include "wlan.h"
-#include "net_logging.h"
 #include "button_handler.h"
 #include "mqttcomm.h"
 #include "led_status.h"

@@ -2,26 +2,20 @@
 
 ## Project Overview
 
-ESP-IDF 5.4.0 project targeting **ESP32-C6** (RISC-V). This is a pit-radio button box for motorsport ("funkbox") that reads physical button presses (PIT, FUEL, FCK, STINT, ALARM) and broadcasts them as Protobuf-encoded messages over UDP multicast to a larger telemetry system.
+ESP-IDF project (requires ≥5.5.2) targeting **ESP32-C6** (RISC-V). This is a pit-radio button box for motorsport ("funkbox") that reads physical button presses (PIT, FUEL, FCK, STINT, ALARM) and publishes them as JSON messages over MQTT to a broker running on the car's Raspberry Pi gateway (`carpi`).
 
-Part of a multi-device ecosystem — there is a "primary" and "secondary" variant per car (FORD / VECTRA), controlled via CMake build flags.
+There is a "primary" and "secondary" variant per unit, controlled via the `PRIMARY` CMake build flag.
 
 ## Build Commands
 
-Requires ESP-IDF v5.4+ environment (`idf.py` must be on PATH via `export.sh` / `export.bat`).
+Requires ESP-IDF v5.5.2+ environment (`idf.py` must be on PATH via `export.sh` / `export.bat`).
 
 ```sh
-# Standard build
+# Standard build (secondary unit)
 idf.py build
 
 # Build for primary unit
 idf.py -DPRIMARY=1 build
-
-# Build for Ford car variant
-idf.py -DFORD=1 build
-
-# Combined (primary Ford unit)
-idf.py -DPRIMARY=1 -DFORD=1 build
 
 # Flash and monitor
 idf.py -p COMx flash monitor
@@ -30,35 +24,31 @@ idf.py -p COMx flash monitor
 idf.py fullclean
 ```
 
-The `PRIMARY` and `FORD` CMake flags set compile-time defines that control WiFi SSID/password suffixes and naming. Default (no flags) builds a secondary Vectra unit.
+The `PRIMARY` CMake flag controls WiFi SSID/password suffixes: the base credentials (defined in `CMakeLists.txt` as `CONFIG_SSID`/`CONFIG_PWD`) get `"prim"` appended for primary units and `"sec"` for secondary units (see `wlan.c:extract_credentials()`).
 
 ## Architecture
 
-**Boot sequence** (`main.c`): NVS init → netif init → event loop → WiFi STA connect → UDP multicast socket → button handler registration.
+**Boot sequence** (`main.c`): NVS init → netif init → event loop → `led_status_init` → `wlan_start` (blocks until connected or reboots) → `mqttcomm_start` → `button_handler_start`.
 
-**Communication flow**: Physical GPIO buttons → `button_handler` (espressif/button component) → `status_broadcaster` (JSON serialize) → `mqttcomm` (MQTT publish to `funkbox/buttons` topic on gateway broker).
+**Communication flow**: Physical GPIO buttons → `button_handler` (espressif/button component, `BUTTON_PRESS_DOWN` event) → `broadcaster_send_button` → `mqttcomm_publish` → MQTT topic `funkbox/buttons` on the gateway broker.
+
+**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `FUEL`, `FCK`, `STINT`, `ALARM`; states: `PRESSED`, `DEPRESSED`.
 
 **Key modules**:
-- `wlan.c` — WiFi STA connection with retry logic; credentials derived from `CONFIG_SSID`/`CONFIG_PWD` + primary/secondary suffix
-- `mqttcomm.c` — MQTT client using ESP-IDF `esp_mqtt`; auto-detects broker from WiFi gateway IP, reconnects every 5s on failure
-- `led_status.c` — Status LED on GPIO 8; solid ON when MQTT connected, flashing (~2Hz) when disconnected
-- `button_handler.c` — Registers 5 GPIO buttons (pins 18–21, 14) using `espressif/button` component
-- `button_types.h` — Shared `ButtonName` / `ButtonState` enums used by button_handler and status_broadcaster
-- `status_broadcaster.c` — Serializes button events as JSON (`{"button":"PIT","state":"PRESSED"}`) and publishes via MQTT
-
-**Custom component**: `components/net-logging` — Network-based logging (UDP/TCP/MQTT/HTTP) configurable via Kconfig.
-
-**Static assets**: `data/` contains a SPIFFS web UI (HTML/CSS) for configuration, flashed to the `storage` partition.
+- `wlan.c` — WiFi STA connection; blocks in `app_main` until IP obtained, reboots on failure
+- `mqttcomm.c` — MQTT client; broker URI auto-derived from WiFi gateway IP (`mqtt://<gw_ip>`); reconnects every 5s on failure
+- `led_status.c` — Status LED on GPIO 8; solid ON = MQTT connected, flashing ~2Hz = disconnected
+- `button_handler.c` — Registers 5 GPIO buttons using `espressif/button` component; only `BUTTON_PRESS_DOWN` is handled (no release events currently)
+- `funkbox_types.h` — Shared `ButtonName` / `ButtonState` enums
+- `status_broadcaster.c` — Formats and publishes JSON button events via `mqttcomm`
 
 ## Conventions
 
-- Protobuf-c generated files live in `main/proto/` — regenerate with `protoc-c` if the `.proto` file changes, don't hand-edit
-- All source files are registered explicitly in `main/CMakeLists.txt` `SRCS` list — add new `.c` files there
-- NVS partition is pre-populated from `nvs.csv` and flashed alongside the app
-- Custom partition table in `partitions.csv` includes OTA slots, SPIFFS storage, and Zigbee storage
-- Button GPIO pin mapping is hardcoded in `button_handler.c` — update there for hardware changes
+- All source files must be listed explicitly in `main/CMakeLists.txt` `idf_component_register(SRCS ...)` — add new `.c` files there or they won't compile
+- Button GPIO pin mapping is hardcoded in `button_handler.c` — GPIO 18=ALARM, 19=STINT, 20=FCK, 21=FUEL, 14=PIT
 - LED status pin (GPIO 8) is hardcoded in `led_status.c`
-- MQTT topic `funkbox/buttons` is defined in `status_broadcaster.c`
-- MQTT broker address is auto-detected from WiFi gateway IP at startup
-- WiFi credentials use a pattern: base SSID/PWD from CMake defines + "prim"/"sec" suffix based on `PRIMARY` flag
+- MQTT topic `funkbox/buttons` is defined as a `#define` in `status_broadcaster.c`
+- MQTT broker address is auto-detected at runtime from the WiFi gateway IP — no hardcoded broker address
+- WiFi base credentials (`CONFIG_SSID` / `CONFIG_PWD`) are hardcoded in the root `CMakeLists.txt` via `add_compile_definitions`; the `PRIMARY` flag appends `"prim"` or `"sec"` to both values at runtime in `wlan.c`
 - ESP-IDF component dependencies are managed via `main/idf_component.yml` (espressif component registry)
+- Custom partition table in `partitions.csv` includes OTA slots (ota_0, ota_1 × 1M each), Zigbee storage, and NVS
