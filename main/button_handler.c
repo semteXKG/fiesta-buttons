@@ -8,10 +8,16 @@
 
 static const char* TAG = "PIT_RADIO";
 
-void event_cb(void* button_handle, void* usr_data) {
+void press_cb(void* button_handle, void* usr_data) {
     ButtonName name = (ButtonName)(intptr_t) usr_data;
-    ESP_LOGI(TAG, "Button Pressed: %d", name);
+    ESP_LOGI(TAG, "Button down: %d", name);
     broadcaster_send_button(name, BUTTON_STATE_PRESSED);
+}
+
+void release_cb(void* button_handle, void* usr_data) {
+    ButtonName name = (ButtonName)(intptr_t) usr_data;
+    ESP_LOGI(TAG, "Button up: %d", name);
+    broadcaster_send_button(name, BUTTON_STATE_DEPRESSED);
 }
 
 void register_button(gpio_num_t num, ButtonName name) {
@@ -23,7 +29,8 @@ void register_button(gpio_num_t num, ButtonName name) {
 
     button_handle_t btn_handle;
     ESP_ERROR_CHECK(iot_button_new_gpio_device(&btn_config, &gpio_cfg, &btn_handle));
-    ESP_ERROR_CHECK(iot_button_register_cb(btn_handle, BUTTON_PRESS_DOWN, NULL, event_cb, (void *)(intptr_t)name));
+    ESP_ERROR_CHECK(iot_button_register_cb(btn_handle, BUTTON_PRESS_DOWN, NULL, press_cb, (void *)(intptr_t)name));
+    ESP_ERROR_CHECK(iot_button_register_cb(btn_handle, BUTTON_PRESS_UP, NULL, release_cb, (void *)(intptr_t)name));
 }
 
 void button_handler_start() {
