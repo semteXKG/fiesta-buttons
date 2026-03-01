@@ -24,7 +24,7 @@ idf.py -p COMx flash monitor
 idf.py fullclean
 ```
 
-The `PRIMARY` CMake flag controls WiFi SSID/password suffixes: the base credentials (defined in `CMakeLists.txt` as `CONFIG_SSID`/`CONFIG_PWD`) get `"prim"` appended for primary units and `"sec"` for secondary units (see `wlan.c:extract_credentials()`).
+The `PRIMARY` CMake flag is still present but currently unused — WiFi credentials are the same for all units.
 
 ## Architecture
 
@@ -35,7 +35,7 @@ The `PRIMARY` CMake flag controls WiFi SSID/password suffixes: the base credenti
 **Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `YES`, `FCK`, `STINT`, `NO`; states: `PRESSED`, `DEPRESSED`.
 
 **Key modules**:
-- `wlan.c` — WiFi STA connection; blocks in `app_main` until IP obtained, reboots on failure
+- `wlan.c` — WiFi STA connection; credentials (`fiesta-network` / `fiesta-network-123`) defined as `#define` at top of file; blocks in `app_main` until IP obtained, reboots on failure
 - `mqttcomm.c` — MQTT client; broker URI auto-derived from WiFi gateway IP (`mqtt://<gw_ip>`); reconnects every 5s on failure
 - `led_status.c` — Status LED on GPIO 8; solid ON = MQTT connected, flashing ~2Hz = disconnected
 - `button_handler.c` — Registers 5 GPIO buttons using `espressif/button` component; only `BUTTON_PRESS_DOWN` is handled (no release events currently)
@@ -49,6 +49,6 @@ The `PRIMARY` CMake flag controls WiFi SSID/password suffixes: the base credenti
 - LED status pin (GPIO 8) is hardcoded in `led_status.c`
 - MQTT topic `funkbox/buttons` is defined as a `#define` in `status_broadcaster.c`
 - MQTT broker address is auto-detected at runtime from the WiFi gateway IP — no hardcoded broker address
-- WiFi base credentials (`CONFIG_SSID` / `CONFIG_PWD`) are hardcoded in the root `CMakeLists.txt` via `add_compile_definitions`; the `PRIMARY` flag appends `"prim"` or `"sec"` to both values at runtime in `wlan.c`
+- WiFi credentials (`WLAN_SSID` / `WLAN_PWD`) are defined as `#define` in `wlan.c` — update there for network changes
 - ESP-IDF component dependencies are managed via `main/idf_component.yml` (espressif component registry)
 - Custom partition table in `partitions.csv` includes OTA slots (ota_0, ota_1 × 1M each), Zigbee storage, and NVS

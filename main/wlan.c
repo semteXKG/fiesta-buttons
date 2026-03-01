@@ -1,5 +1,8 @@
 #include "wlan.h"
 
+#define WLAN_SSID "fiesta-network"
+#define WLAN_PWD  "fiesta-network-123"
+
 #define EXAMPLE_ESP_MAXIMUM_RETRY  3
 
 #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
@@ -7,9 +10,6 @@
 #define EXAMPLE_H2E_IDENTIFIER ""
 
 static const char* TAG = "APP_WLAN";
-
-char WLAN_SSID_RES[50] = {};
-char WLAN_PWD_RES[50] = {};
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -69,8 +69,8 @@ esp_err_t wifi_init_sta(void)
         },
     };
 
-    strcpy((char*)wifi_config.sta.ssid, WLAN_SSID_RES);
-    strcpy((char*)wifi_config.sta.password, WLAN_PWD_RES);
+    strcpy((char*)wifi_config.sta.ssid, WLAN_SSID);
+    strcpy((char*)wifi_config.sta.password, WLAN_PWD);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
@@ -96,61 +96,19 @@ esp_err_t wifi_init_sta(void)
         char ip_addr[16];
         inet_ntoa_r(ip_info.ip.addr, ip_addr, 16);
 
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s and ip %s", CONFIG_SSID, CONFIG_PWD, ip_addr);
+        ESP_LOGI(TAG, "connected to ap SSID:%s", WLAN_SSID);
 
         return ESP_OK;
     } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", CONFIG_SSID, CONFIG_PWD);
+        ESP_LOGI(TAG, "Failed to connect to SSID:%s", WLAN_SSID);
     } else {
         ESP_LOGE(TAG, "UNEXPECTED EVENT");
     }
     return ESP_FAIL;
 }
 
-void wifi_init_ap() {
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid = CONFIG_SSID,
-            .ssid_len = strlen(CONFIG_SSID),
-            .password = "",
-            .max_connection = 5,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
-        },
-    };
-    
-    wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-    
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    esp_netif_ip_info_t ip_info;
-    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"), &ip_info);
-
-    char ip_addr[16];
-    inet_ntoa_r(ip_info.ip.addr, ip_addr, 16);
-    ESP_LOGI(TAG, "Set up softAP with IP: %s", ip_addr);
-
-    ESP_LOGI(TAG, "wifi_init_softap finished. SSID:'%s'", CONFIG_SSID);
-}
-
-void extract_credentials() {
-        strcpy(WLAN_SSID_RES, CONFIG_SSID);
-        strcpy(WLAN_PWD_RES, CONFIG_PWD);
-        
-        #if PRIMARY
-            strcat(WLAN_SSID_RES, "prim");
-            strcat(WLAN_PWD_RES, "prim");
-        #else
-            strcat(WLAN_SSID_RES, "sec");
-            strcat(WLAN_PWD_RES, "sec");
-    #endif
-}
-
 esp_netif_t* wlan_start() {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-
-    extract_credentials();
 
     esp_netif_t* netif = esp_netif_create_default_wifi_sta();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
