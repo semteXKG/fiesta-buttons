@@ -32,7 +32,7 @@ The `PRIMARY` CMake flag controls WiFi SSID/password suffixes: the base credenti
 
 **Communication flow**: Physical GPIO buttons → `button_handler` (espressif/button component, `BUTTON_PRESS_DOWN` event) → `broadcaster_send_button` → `mqttcomm_publish` → MQTT topic `funkbox/buttons` on the gateway broker.
 
-**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `FUEL`, `FCK`, `STINT`, `ALARM`; states: `PRESSED`, `DEPRESSED`.
+**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `YES`, `FCK`, `STINT`, `NO`; states: `PRESSED`, `DEPRESSED`.
 
 **Key modules**:
 - `wlan.c` — WiFi STA connection; blocks in `app_main` until IP obtained, reboots on failure
@@ -45,7 +45,7 @@ The `PRIMARY` CMake flag controls WiFi SSID/password suffixes: the base credenti
 ## Conventions
 
 - All source files must be listed explicitly in `main/CMakeLists.txt` `idf_component_register(SRCS ...)` — add new `.c` files there or they won't compile
-- Button GPIO pin mapping is hardcoded in `button_handler.c` — GPIO 18=ALARM, 19=STINT, 20=FCK, 21=FUEL, 14=PIT
+- Button GPIO pin mapping is hardcoded in `button_handler.c` — GPIO 18=NO, 19=STINT, 20=FCK, 21=YES, 14=PIT
 - LED status pin (GPIO 8) is hardcoded in `led_status.c`
 - MQTT topic `funkbox/buttons` is defined as a `#define` in `status_broadcaster.c`
 - MQTT broker address is auto-detected at runtime from the WiFi gateway IP — no hardcoded broker address

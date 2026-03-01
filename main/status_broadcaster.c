@@ -10,10 +10,10 @@ static const char* BC_TAG = "broadcaster";
 static const char* button_name_str(ButtonName name) {
     switch (name) {
         case BUTTON_NAME_PIT:   return "PIT";
-        case BUTTON_NAME_FUEL:  return "FUEL";
+        case BUTTON_NAME_YES:   return "YES";
         case BUTTON_NAME_FCK:   return "FCK";
         case BUTTON_NAME_STINT: return "STINT";
-        case BUTTON_NAME_ALARM: return "ALARM";
+        case BUTTON_NAME_NO:    return "NO";
         default:                return "UNKNOWN";
     }
 }
