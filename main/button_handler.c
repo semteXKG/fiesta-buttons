@@ -35,8 +35,8 @@ void register_button(gpio_num_t num, ButtonName name) {
 
 void button_handler_start() {
     register_button(GPIO_NUM_18, BUTTON_NAME_NO);
-    register_button(GPIO_NUM_19, BUTTON_NAME_STINT);
+    register_button(GPIO_NUM_19, BUTTON_NAME_YES);
     register_button(GPIO_NUM_20, BUTTON_NAME_FCK);
-    register_button(GPIO_NUM_21, BUTTON_NAME_YES);
+    register_button(GPIO_NUM_21, BUTTON_NAME_STINT);
     register_button(GPIO_NUM_14, BUTTON_NAME_PIT);
 }
