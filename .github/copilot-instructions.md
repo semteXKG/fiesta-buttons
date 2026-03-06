@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ESP-IDF project (requires ≥5.5.2) targeting **ESP32-C6** (RISC-V). This is a pit-radio button box for motorsport ("funkbox") that reads physical button presses (PIT, FUEL, FCK, STINT, ALARM) and publishes them as JSON messages over MQTT to a broker running on the car's Raspberry Pi gateway (`carpi`).
+ESP-IDF project (requires ≥5.5.2) targeting **ESP32-C6** (RISC-V). This is a pit-radio button box for motorsport ("funkbox") that reads physical button presses (PIT, FUEL, FCK, TALK, ALARM) and publishes them as JSON messages over MQTT to a broker running on the car's Raspberry Pi gateway (`carpi`).
 
 There is a "primary" and "secondary" variant per unit, controlled via the `PRIMARY` CMake build flag.
 
@@ -32,7 +32,7 @@ The `PRIMARY` CMake flag is still present but currently unused — WiFi credenti
 
 **Communication flow**: Physical GPIO buttons → `button_handler` (espressif/button component, `BUTTON_PRESS_DOWN` event) → `broadcaster_send_button` → `mqttcomm_publish` → MQTT topic `funkbox/buttons` on the gateway broker.
 
-**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `YES`, `FCK`, `STINT`, `NO`; states: `PRESSED`, `DEPRESSED`. Published to `fiesta/buttons` at QoS 1, no retain.
+**Message format**: `{"button":"PIT","state":"PRESSED"}` — button names: `PIT`, `YES`, `FCK`, `TALK`, `NO`; states: `PRESSED`, `DEPRESSED`. Published to `fiesta/buttons` at QoS 1, no retain.
 
 **Key modules**:
 - `wlan.c` — WiFi STA connection; credentials (`fiesta-network` / `fiesta-network-123`) defined as `#define` at top of file; blocks in `app_main` until IP obtained, reboots on failure
@@ -45,7 +45,7 @@ The `PRIMARY` CMake flag is still present but currently unused — WiFi credenti
 ## Conventions
 
 - All source files must be listed explicitly in `main/CMakeLists.txt` `idf_component_register(SRCS ...)` — add new `.c` files there or they won't compile
-- Button GPIO pin mapping is hardcoded in `button_handler.c` — GPIO 18=NO, 19=STINT, 20=FCK, 21=YES, 14=PIT
+- Button GPIO pin mapping is hardcoded in `button_handler.c` — GPIO 18=NO, 19=TALK, 20=FCK, 21=YES, 14=PIT
 - LED status pin (GPIO 8) is hardcoded in `led_status.c`
 - MQTT topic `funkbox/buttons` is defined as a `#define` in `status_broadcaster.c`
 - MQTT broker address is auto-detected at runtime from the WiFi gateway IP — no hardcoded broker address

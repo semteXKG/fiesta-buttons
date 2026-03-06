@@ -12,7 +12,7 @@ static const char* button_name_str(ButtonName name) {
         case BUTTON_NAME_PIT:   return "PIT";
         case BUTTON_NAME_YES:   return "YES";
         case BUTTON_NAME_FCK:   return "FCK";
-        case BUTTON_NAME_STINT: return "STINT";
+        case BUTTON_NAME_TALK: return "TALK";
         case BUTTON_NAME_NO:    return "NO";
         default:                return "UNKNOWN";
     }
